@@ -9,8 +9,6 @@ from enum import Enum
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Define handlers as classes for separation of concerns
-
 
 class SerializationHandler:
     @staticmethod
@@ -148,11 +146,13 @@ class ProtoBufHandler:
 
             if isinstance(typ, type) and hasattr(typ, "generate_proto_message"):
                 nested_message = typ.generate_proto_message().strip()
-                message += f"    {nested_message.replace('\n', '\n    ')}\n"
+                indented_nested_message = nested_message.replace("\n", "\n    ")
+                message += f"    {indented_nested_message}\n"
                 proto_type = typ.__name__
             elif isinstance(typ, type) and issubclass(typ, Enum):
                 enum_def = self.generate_enum_definition(typ).strip()
-                message += f"    {enum_def.replace('\n', '\n    ')}\n"
+                indented_enum_def = enum_def.replace("\n", "\n    ")
+                message += f"    {indented_enum_def}\n"
                 proto_type = typ.__name__
             else:
                 proto_type = self.get_proto_type(model, typ)
