@@ -3,7 +3,7 @@ import os
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Optional
-from transmutate.base_model.base import BaseModel
+from transmutate.base_model import BaseModel
 
 
 # Define Gender Enum locally in the test file
