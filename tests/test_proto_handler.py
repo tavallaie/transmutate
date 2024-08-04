@@ -1,4 +1,5 @@
 import unittest
+import os
 from tests.test_classes import Person, Address
 from transmutate.proto_handler import ProtoHandler
 
@@ -34,7 +35,7 @@ message Person {
   repeated string phone_numbers = 4;
 }"""
 
-        self.assertIn(expected_person_proto, proto_content)
+        self.assertEqual(proto_content.strip(), expected_person_proto.strip())
 
     def test_generate_proto_address(self):
         # Test Proto generation for the Address dataclass
@@ -49,38 +50,31 @@ message Address {
   string zip_code = 3;
 }"""
 
-        self.assertIn(expected_address_proto, proto_content)
+        self.assertEqual(proto_content.strip(), expected_address_proto.strip())
 
-    def test_proto_syntax(self):
-        # Test that the Proto syntax is correct
+    def test_write_proto_file(self):
+        # Test writing the Proto content to a file
         proto_handler = ProtoHandler(self.person)
-        proto_content = proto_handler.generate_proto()
+        filename = "output/person_test.proto"
 
-        # Check for correct syntax at the start of the Proto file
-        self.assertTrue(proto_content.startswith('syntax = "proto3";\n\n'))
-        self.assertIn("message Person {", proto_content)
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    def test_field_types(self):
-        # Test that field types are correctly converted
-        proto_handler = ProtoHandler(self.person)
-        proto_content = proto_handler.generate_proto()
+        # Write the Proto to a file
+        proto_handler.write_proto_file(filename)
 
-        # Check that fields have correct Proto types
-        self.assertIn("string name", proto_content)
-        self.assertIn("int32 age", proto_content)
-        self.assertIn("repeated string phone_numbers", proto_content)
+        # Verify the file exists
+        self.assertTrue(os.path.exists(filename))
 
-    def test_field_order(self):
-        # Test that fields are in the correct order
-        proto_handler = ProtoHandler(self.person)
-        proto_content = proto_handler.generate_proto()
+        # Read the file and verify its content
+        with open(filename, "r") as file:
+            file_content = file.read()
 
-        expected_order = """string name = 1;
-  int32 age = 2;
-  string email = 3;
-  repeated string phone_numbers = 4;"""
+        expected_content = proto_handler.generate_proto()
+        self.assertEqual(file_content.strip(), expected_content.strip())
 
-        self.assertIn(expected_order, proto_content)
+        # Clean up by removing the created file
+        os.remove(filename)
 
 
 if __name__ == "__main__":

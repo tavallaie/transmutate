@@ -15,13 +15,20 @@ class BaseModel:
                 validation_method = getattr(self, validation_method_name)
                 validation_method()
 
-    def to_proto(self):
+    def to_proto(self, directory: str = "."):
         from transmutate.proto_handler import (
             ProtoHandler,
         )  # Import here to avoid circular import
 
         proto_generator = ProtoHandler(self)
-        return proto_generator.generate_proto()
+        proto_content = proto_generator.generate_proto()
+
+        # Use the model's class name as the filename
+        filename = f"{directory}/{self.__class__.__name__.lower()}.proto"
+
+        # Write the Proto content to the file
+        proto_generator.write_proto_file(filename)
+        return proto_content
 
     def to_json(self):
         from transmutate.json_handler import (
