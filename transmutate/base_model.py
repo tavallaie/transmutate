@@ -1,5 +1,6 @@
-from dataclasses import fields, MISSING, is_dataclass
-from typing import Type, Any, List, Optional
+from dataclasses import fields, MISSING
+from typing import Type
+import json
 
 
 class BaseModel:
@@ -31,53 +32,41 @@ class BaseModel:
         return proto_content
 
     def to_json(self):
-        from transmutate.json_handler import (
-            JSONHandler,
-        )  # Import here to avoid circular import
-
-        json_handler = JSONHandler(self)
-        return json_handler.to_json()
+        return json.dumps(self.to_dict(), indent=4)
 
     def to_jsonb(self):
-        from transmutate.jsonb_handler import (
-            JSONBHandler,
-        )  # Import here to avoid circular import
-
-        jsonb_handler = JSONBHandler(self)
-        return jsonb_handler.to_jsonb()
+        return json.dumps(self.to_dict(), separators=(",", ":"))
 
     @classmethod
     def from_proto(cls: Type["BaseModel"], proto_data: str) -> "BaseModel":
         # Placeholder: Parse Proto data and create an instance of the dataclass
         # Requires a real parser for production code
-        from transmutate.json_handler import (
-            JSONHandler,
-        )  # Import here to avoid circular import
-
-        parsed_data = JSONHandler.parse_json(
-            proto_data
-        )  # Simulating using JSON parsing
-        return cls.from_dict(parsed_data)
+        return cls.from_dict(json.loads(proto_data))  # Simulating using JSON parsing
 
     @classmethod
     def from_json(cls: Type["BaseModel"], json_data: str) -> "BaseModel":
-        from transmutate.json_handler import (
-            JSONHandler,
-        )  # Import here to avoid circular import
-
-        data_dict = JSONHandler.parse_json(json_data)
+        data_dict = json.loads(json_data)
         return cls.from_dict(data_dict)
 
     @classmethod
     def from_jsonb(cls: Type["BaseModel"], jsonb_data: str) -> "BaseModel":
-        from transmutate.jsonb_handler import (
-            JSONBHandler,
-        )  # Import here to avoid circular import
-
-        data_dict = JSONBHandler.parse_jsonb(jsonb_data)
+        data_dict = json.loads(jsonb_data)
         return cls.from_dict(data_dict)
 
     @classmethod
     def from_dict(cls: Type["BaseModel"], data_dict: dict) -> "BaseModel":
-        # Create an instance from a dictionary, assuming no nested dataclasses
-        return cls(**data_dict)
+        field_values = {}
+        for field in fields(cls):
+            field_name = field.name
+            if field_name in data_dict:
+                field_values[field_name] = data_dict[field_name]
+            elif field.default is not MISSING:
+                field_values[field_name] = field.default
+            elif field.default_factory is not MISSING:
+                field_values[field_name] = field.default_factory()
+            else:
+                raise ValueError(f"Missing required field '{field_name}'")
+        return cls(**field_values)
+
+    def to_dict(self) -> dict:
+        return {field.name: getattr(self, field.name) for field in fields(self)}
