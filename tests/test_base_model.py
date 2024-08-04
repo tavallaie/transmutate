@@ -19,9 +19,6 @@ class Address(BaseModel):
     city: str
     zip_code: int
 
-    def __post_init__(self):
-        super().__post_init__()
-
     def validation_zip_code(self, value):
         if not (10000 <= value <= 99999):
             raise ValueError("zip_code must be a five-digit number.")
@@ -33,9 +30,6 @@ class Company(BaseModel):
     industry: str
     address: Address
 
-    def __post_init__(self):
-        super().__post_init__()
-
 
 @dataclass
 class Person(BaseModel):
@@ -45,9 +39,6 @@ class Person(BaseModel):
     email: Optional[str] = None
     addresses: List[Address] = field(default_factory=list)
     company: Optional[Company] = None
-
-    def __post_init__(self):
-        super().__post_init__()
 
     def validation_name(self, value):
         if not value:
@@ -149,7 +140,7 @@ class TestBaseModel(unittest.TestCase):
                 },
             },
         }
-        new_person = Person.from_dict(person_dict)
+        new_person = BaseModel.from_dict(person_dict)
         self.assertEqual(new_person, self.person)
 
     def test_from_json(self):
@@ -168,7 +159,7 @@ class TestBaseModel(unittest.TestCase):
                 "address": {"street": "123 Main St", "city": "Anytown", "zip_code": 12345}
             }
         }"""
-        new_person = Person.from_json(person_json)
+        new_person = BaseModel.from_json(person_json)
         self.assertEqual(new_person, self.person)
 
     def test_validation(self):
