@@ -52,13 +52,10 @@ message Address {
 
         self.assertEqual(proto_content.strip(), expected_address_proto.strip())
 
-    def test_write_proto_file(self):
-        # Test writing the Proto content to a file
+    def test_write_proto_file_person(self):
+        # Test writing the Proto content to a file for the Person dataclass
         proto_handler = ProtoHandler(self.person)
-        filename = "output/person_test.proto"
-
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        filename = "person_test.proto"
 
         # Write the Proto to a file
         proto_handler.write_proto_file(filename)
@@ -70,7 +67,43 @@ message Address {
         with open(filename, "r") as file:
             file_content = file.read()
 
-        expected_content = proto_handler.generate_proto()
+        expected_content = """syntax = "proto3";
+
+message Person {
+  string name = 1;
+  int32 age = 2;
+  string email = 3;
+  repeated string phone_numbers = 4;
+}"""
+
+        self.assertEqual(file_content.strip(), expected_content.strip())
+
+        # Clean up by removing the created file
+        os.remove(filename)
+
+    def test_write_proto_file_address(self):
+        # Test writing the Proto content to a file for the Address dataclass
+        proto_handler = ProtoHandler(self.address)
+        filename = "address_test.proto"
+
+        # Write the Proto to a file
+        proto_handler.write_proto_file(filename)
+
+        # Verify the file exists
+        self.assertTrue(os.path.exists(filename))
+
+        # Read the file and verify its content
+        with open(filename, "r") as file:
+            file_content = file.read()
+
+        expected_content = """syntax = "proto3";
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string zip_code = 3;
+}"""
+
         self.assertEqual(file_content.strip(), expected_content.strip())
 
         # Clean up by removing the created file
