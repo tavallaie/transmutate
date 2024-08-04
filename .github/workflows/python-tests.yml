@@ -28,14 +28,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install Poetry
+    - name: Install poetry
+      uses: abatilo/actions-poetry@v2
+    - name: Setup a local virtual environment (if no poetry.toml file)
       run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        
-
-    - name: Install dependencies
+          poetry config virtualenvs.create true --local
+          poetry config virtualenvs.in-project true --local
+    
+    - name: Install the project dependencies
       run: poetry install
-
 
     - name: Run tests
       run: poetry run python -m unittest discover -s tests
