@@ -20,8 +20,6 @@ class Person(BaseModel):
     age: int
     email: Optional[str] = None
     phone_numbers: List[str] = field(default_factory=list)
-    address: Optional[Address] = None
-    friends: List["Person"] = field(default_factory=list)
 
     def validation_age(self):
         if not (0 <= self.age <= 120):

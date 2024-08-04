@@ -1,5 +1,4 @@
-from dataclasses import is_dataclass
-from typing import List, Optional
+from typing import Optional
 
 
 class ProtoHandler:
@@ -15,9 +14,9 @@ class ProtoHandler:
         proto_content = "\n".join(['syntax = "proto3";', ""] + self.proto_definitions)
         return proto_content
 
-    def process_dataclass(self, dataclass_type, parent_names: List[str] = []) -> str:
-        # Build a unique message name
-        message_name = "_".join(parent_names + [dataclass_type.__name__])
+    def process_dataclass(self, dataclass_type) -> str:
+        # Build a message name
+        message_name = dataclass_type.__name__
         proto_lines = [f"message {message_name} {{"]
 
         fields = dataclass_type.__annotations__
@@ -32,9 +31,7 @@ class ProtoHandler:
         }
 
         for index, (field_name, field_type) in enumerate(fields.items(), start=1):
-            proto_type = self.get_proto_type(
-                field_type, type_mapping, parent_names + [dataclass_type.__name__]
-            )
+            proto_type = self.get_proto_type(field_type, type_mapping)
             proto_lines.append(f"  {proto_type} {field_name} = {index};")
 
         proto_lines.append("}")
@@ -44,22 +41,15 @@ class ProtoHandler:
 
         return message_name
 
-    def get_proto_type(self, field_type, type_mapping, parent_names):
-        # Handle special types like lists and Optionals
+    def get_proto_type(self, field_type, type_mapping):
+        # Handle lists and Optionals
         if hasattr(field_type, "__origin__"):
             origin = field_type.__origin__
             args = field_type.__args__
             if origin is list:
                 inner_type = args[0]
-                return f"{type_mapping[list]} {self.get_proto_type(inner_type, type_mapping, parent_names)}"
-            elif origin is dict and len(args) == 2:
-                return f"{type_mapping[dict]}<{self.get_proto_type(args[0], type_mapping, parent_names)}, {self.get_proto_type(args[1], type_mapping, parent_names)}>"
+                return f"{type_mapping[list]} {self.get_proto_type(inner_type, type_mapping)}"
             elif origin is Optional:
-                return self.get_proto_type(args[0], type_mapping, parent_names)
-
-        # Handle nested dataclasses
-        if is_dataclass(field_type):
-            nested_message_name = self.process_dataclass(field_type, parent_names)
-            return nested_message_name
+                return self.get_proto_type(args[0], type_mapping)
 
         return type_mapping.get(field_type, "string")

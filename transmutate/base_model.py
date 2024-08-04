@@ -1,5 +1,5 @@
 from dataclasses import fields, MISSING, is_dataclass
-from typing import Type
+from typing import Type, Any, List, Optional
 
 
 class BaseModel:
@@ -72,24 +72,5 @@ class BaseModel:
 
     @classmethod
     def from_dict(cls: Type["BaseModel"], data_dict: dict) -> "BaseModel":
-        # Helper method to construct an instance from a dictionary
-        field_values = {}
-        for field in fields(cls):
-            field_name = field.name
-            field_type = field.type
-
-            if field_name in data_dict:
-                value = data_dict[field_name]
-                if is_dataclass(field_type):
-                    # If the field is a dataclass, recursively call from_dict
-                    field_values[field_name] = field_type.from_dict(value)
-                else:
-                    field_values[field_name] = value
-            elif field.default is not MISSING:
-                field_values[field_name] = field.default
-            elif field.default_factory is not MISSING:
-                field_values[field_name] = field.default_factory()
-            else:
-                raise ValueError(f"Missing required field '{field_name}'")
-
-        return cls(**field_values)
+        # Create an instance from a dictionary, assuming no nested dataclasses
+        return cls(**data_dict)
