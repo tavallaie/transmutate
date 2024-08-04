@@ -9,17 +9,20 @@ from enum import Enum
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+# Define handlers as classes for separation of concerns
+
 
 class SerializationHandler:
-    def to_dict(self, model: Any, fields: Optional[List[str]] = None) -> dict:
+    @staticmethod
+    def to_dict(model: Any, field_names: Optional[List[str]] = None) -> dict:
         """
         Convert the dataclass instance to a dictionary, optionally including only specified fields.
         """
         all_fields = asdict(model)
 
-        if fields is not None:
+        if field_names is not None:
             filtered_dict = {}
-            for key in fields:
+            for key in field_names:
                 value = all_fields.get(key)
                 if hasattr(value, "to_dict"):
                     filtered_dict[key] = value.to_dict()
@@ -45,17 +48,23 @@ class SerializationHandler:
 
         return all_fields
 
-    def to_json(self, model: Any, fields: Optional[List[str]] = None) -> str:
+    @staticmethod
+    def to_json(model: Any, field_names: Optional[List[str]] = None) -> str:
         """
         Convert the dataclass instance to a JSON string, optionally including only specified fields.
         """
-        return json_lib.dumps(self.to_dict(model, fields), indent=2)
+        return json_lib.dumps(
+            SerializationHandler.to_dict(model, field_names), indent=2
+        )
 
-    def to_jsonb(self, model: Any, fields: Optional[List[str]] = None) -> bytes:
+    @staticmethod
+    def to_jsonb(model: Any, field_names: Optional[List[str]] = None) -> bytes:
         """
         Convert the dataclass instance to a JSONB format (binary JSON), optionally including only specified fields.
         """
-        return json_lib.dumps(self.to_dict(model, fields)).encode("utf-8")
+        return json_lib.dumps(SerializationHandler.to_dict(model, field_names)).encode(
+            "utf-8"
+        )
 
     @staticmethod
     def from_dict(data: dict, cls: Type) -> Any:
@@ -86,14 +95,14 @@ class SerializationHandler:
 
 class ProtoBufHandler:
     def to_proto(
-        self, model: Any, path_dir: str = ".", fields: Optional[List[str]] = None
+        self, model: Any, path_dir: str = ".", field_names: Optional[List[str]] = None
     ):
         """
         Generate a ProtoBuf file for the model and optionally compile it, including specific fields if specified.
 
         :param model: The model instance to be converted to ProtoBuf.
         :param path_dir: Directory where the .proto file will be saved.
-        :param fields: List of field names to include. If None, include all fields.
+        :param field_names: List of field names to include. If None, include all fields.
         :default: Current directory (".")
         """
         logging.info(f"Generating ProtoBuf for {model.__class__.__name__}...")
@@ -102,7 +111,7 @@ class ProtoBufHandler:
             os.makedirs(path_dir)
             logging.info(f"Created directory: {path_dir}")
 
-        proto_content = self.generate_proto_message(model, fields)
+        proto_content = self.generate_proto_message(model, field_names)
         proto_file_path = os.path.join(
             path_dir, f"{model.__class__.__name__.lower()}.proto"
         )
@@ -118,20 +127,20 @@ class ProtoBufHandler:
             logging.error(f"Failed to write ProtoBuf file: {e}")
 
     def generate_proto_message(
-        self, model: Any, fields: Optional[List[str]] = None
+        self, model: Any, field_names: Optional[List[str]] = None
     ) -> str:
         """
         Generate ProtoBuf message definition for the class, including nested messages and enums.
 
         :param model: The model instance to generate a ProtoBuf message for.
-        :param fields: List of field names to include. If None, include all fields.
+        :param field_names: List of field names to include. If None, include all fields.
         :return: A string representation of the ProtoBuf message.
         """
         header = self.generate_proto_file_header(model)
         message = f"message {model.__class__.__name__} {{\n"
 
         for idx, field_info in enumerate(fields(model), start=1):
-            if fields and field_info.name not in fields:
+            if field_names and field_info.name not in field_names:
                 continue
 
             name = field_info.metadata.get("proto_name", field_info.name)
@@ -237,7 +246,8 @@ class ProtoBufHandler:
 
 
 class ValidationHandler:
-    def run_validations(self, model: Any):
+    @staticmethod
+    def run_validations(model: Any):
         """
         Runs all dynamic validations on the instance's fields.
         """
@@ -260,14 +270,6 @@ class BaseModel:
     custom_imports: List[str] = field(default_factory=list, init=False)
     package_name: str = field(default="default_package", init=False)
 
-    def __post_init__(self):
-        """
-        Custom validation logic after initialization.
-        Override in subclasses for specific validation.
-        Looks for validation_<fieldname> methods for dynamic field validation.
-        """
-        self.validation_handler.run_validations(self)
-
     # Inject handlers as default properties
     serialization_handler: SerializationHandler = field(
         default_factory=SerializationHandler, init=False, repr=False
@@ -279,25 +281,33 @@ class BaseModel:
         default_factory=ValidationHandler, init=False, repr=False
     )
 
-    def to_dict(self, fields: List[str] = None) -> dict:
-        return self.serialization_handler.to_dict(self, fields)
+    def __post_init__(self):
+        """
+        Custom validation logic after initialization.
+        Override in subclasses for specific validation.
+        Looks for validation_<fieldname> methods for dynamic field validation.
+        """
+        self.run_validations()
 
-    def to_json(self, fields: List[str] = None) -> str:
-        return self.serialization_handler.to_json(self, fields)
+    def to_dict(self, field_names: List[str] = None) -> dict:
+        return self.serialization_handler.to_dict(self, field_names)
 
-    def to_jsonb(self, fields: List[str] = None) -> bytes:
-        return self.serialization_handler.to_jsonb(self, fields)
+    def to_json(self, field_names: List[str] = None) -> str:
+        return self.serialization_handler.to_json(self, field_names)
+
+    def to_jsonb(self, field_names: List[str] = None) -> bytes:
+        return self.serialization_handler.to_jsonb(self, field_names)
 
     @classmethod
     def from_dict(cls, data: dict) -> "BaseModel":
-        return cls.serialization_handler.from_dict(data, cls)
+        return SerializationHandler.from_dict(data, cls)
 
     @classmethod
     def from_json(cls, json_str: str) -> "BaseModel":
-        return cls.serialization_handler.from_json(json_str, cls)
+        return SerializationHandler.from_json(json_str, cls)
 
-    def to_proto(self, path_dir: str = ".", fields: Optional[List[str]] = None):
-        self.protobuf_handler.to_proto(self, path_dir, fields)
+    def to_proto(self, path_dir: str = ".", field_names: Optional[List[str]] = None):
+        self.protobuf_handler.to_proto(self, path_dir, field_names)
 
     def run_validations(self):
         self.validation_handler.run_validations(self)
