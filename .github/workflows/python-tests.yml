@@ -1,0 +1,77 @@
+name: Python CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8, 3.9, 3.10, 3.11]
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        echo "::add-path::$(poetry env info --path)/bin"  # Add Poetry to the PATH
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Install Protocol Buffers on Ubuntu
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        PROTOC_VERSION=27.3  # Adjust this to the version you need
+        PROTOC_ZIP=protoc-${PROTOC_VERSION}-linux-x86_64.zip
+        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}
+        sudo unzip -o ${PROTOC_ZIP} -d /usr/local bin/protoc
+        sudo unzip -o ${PROTOC_ZIP} -d /usr/local include/*
+        rm -f ${PROTOC_ZIP}
+
+    - name: Install Protocol Buffers on macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        PROTOC_VERSION=27.3  # Adjust this to the version you need
+        PROTOC_ZIP=protoc-${PROTOC_VERSION}-osx-x86_64.zip
+        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}
+        sudo unzip -o ${PROTOC_ZIP} -d /usr/local bin/protoc
+        sudo unzip -o ${PROTOC_ZIP} -d /usr/local include/*
+        rm -f ${PROTOC_ZIP}
+
+    - name: Install Protocol Buffers on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        $PROTOC_VERSION = "27.3"  # Adjust this to the version you need
+        $PROTOC_ZIP = "protoc-${PROTOC_VERSION}-win64.zip"
+        Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}" -OutFile $PROTOC_ZIP
+        Expand-Archive -Force -Path $PROTOC_ZIP -DestinationPath 'C:\protoc'
+        Remove-Item -Force $PROTOC_ZIP
+
+    - name: Add Protocol Buffers to PATH on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "C:\protoc\bin" >> $env:GITHUB_PATH
+
+
+    - name: Run tests
+      run: poetry run python -m unittest discover -s tests
+
+   
