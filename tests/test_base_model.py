@@ -1,12 +1,12 @@
 import unittest
-from dataclasses import dataclass, field
+import os
 from enum import Enum
-
+from dataclasses import dataclass, field
 from typing import List, Optional
 from transmutate.base_model.base import BaseModel
-import os
 
 
+# Define Gender Enum locally in the test file
 class Gender(Enum):
     MALE = 0
     FEMALE = 1
@@ -19,6 +19,9 @@ class Address(BaseModel):
     city: str
     zip_code: int
 
+    def __post_init__(self):
+        super().__post_init__()
+
     def validation_zip_code(self, value):
         if not (10000 <= value <= 99999):
             raise ValueError("zip_code must be a five-digit number.")
@@ -30,6 +33,9 @@ class Company(BaseModel):
     industry: str
     address: Address
 
+    def __post_init__(self):
+        super().__post_init__()
+
 
 @dataclass
 class Person(BaseModel):
@@ -39,6 +45,9 @@ class Person(BaseModel):
     email: Optional[str] = None
     addresses: List[Address] = field(default_factory=list)
     company: Optional[Company] = None
+
+    def __post_init__(self):
+        super().__post_init__()
 
     def validation_name(self, value):
         if not value:
@@ -164,12 +173,14 @@ class TestBaseModel(unittest.TestCase):
 
     def test_validation(self):
         with self.assertRaises(ValueError):
-            Person(name="", age=150, gender=Gender.FEMALE)
+            person = Person(name="", age=150, gender=Gender.FEMALE)
+            person.run_validations()
 
         with self.assertRaises(ValueError):
-            Address(
+            address = Address(
                 street="123 Main St", city="Anytown", zip_code=999
             )  # Invalid zip code
+            address.run_validations()
 
     def test_proto_generation(self):
         # Generate ProtoBuf file and check its content
