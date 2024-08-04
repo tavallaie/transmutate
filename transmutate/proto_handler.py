@@ -1,5 +1,5 @@
 from dataclasses import is_dataclass
-from typing import Type, Any, List, Optional
+from typing import List, Optional
 
 
 class ProtoHandler:

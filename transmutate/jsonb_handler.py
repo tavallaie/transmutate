@@ -1,6 +1,6 @@
 import json
 from dataclasses import fields, is_dataclass
-from typing import Any, Type
+from typing import Any
 
 
 class JSONBHandler:
