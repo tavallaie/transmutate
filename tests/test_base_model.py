@@ -139,8 +139,9 @@ class TestBaseModel(unittest.TestCase):
                     "zip_code": 12345,
                 },
             },
+            "extra_field": "should be ignored",
         }
-        new_person = BaseModel.from_dict(person_dict)
+        new_person = Person.from_dict(person_dict)
         self.assertEqual(new_person, self.person)
 
     def test_from_json(self):
@@ -157,9 +158,10 @@ class TestBaseModel(unittest.TestCase):
                 "name": "TechCorp",
                 "industry": "Software",
                 "address": {"street": "123 Main St", "city": "Anytown", "zip_code": 12345}
-            }
+            },
+            "extra_field": "should be ignored"
         }"""
-        new_person = BaseModel.from_json(person_json)
+        new_person = Person.from_json(person_json)
         self.assertEqual(new_person, self.person)
 
     def test_validation(self):

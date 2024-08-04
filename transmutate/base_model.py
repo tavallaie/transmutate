@@ -67,33 +67,41 @@ class SerializationHandler:
     @staticmethod
     def from_dict(data: dict, cls: Type) -> Any:
         """
-        Create a dataclass instance from a dictionary.
+        Create a dataclass instance from a dictionary, ignoring fields not present in the dataclass.
         """
-        field_types = {f.name: f.type for f in fields(cls)}
-        for key, value in data.items():
-            if isinstance(field_types.get(key), type) and hasattr(
-                field_types[key], "from_dict"
-            ):
-                data[key] = field_types[key].from_dict(value)
-            elif isinstance(field_types.get(key), list) and hasattr(
-                field_types[key][0], "from_dict"
-            ):
-                data[key] = [field_types[key][0].from_dict(item) for item in value]
+        # Filter out fields that are not part of the dataclass
+        field_names = {f.name for f in fields(cls)}
+        filtered_data = {k: v for k, v in data.items() if k in field_names}
 
-        return cls(**data)
+        # Handle nested BaseModel instances
+        field_types = {f.name: f.type for f in fields(cls)}
+        for key, value in filtered_data.items():
+            field_type = field_types.get(key)
+
+            if isinstance(field_type, type) and issubclass(field_type, BaseModel):
+                filtered_data[key] = field_type.from_dict(value)
+            elif (
+                isinstance(field_type, list)
+                and len(field_type) > 0
+                and issubclass(field_type[0], BaseModel)
+            ):
+                filtered_data[key] = [field_type[0].from_dict(item) for item in value]
+
+        return cls(**filtered_data)
 
     @staticmethod
     def from_json(json_str: str, cls: Type) -> Any:
         """
-        Create a dataclass instance from a JSON string.
+        Create a dataclass instance from a JSON string, ignoring fields not present in the dataclass.
         """
         data = json_lib.loads(json_str)
         return SerializationHandler.from_dict(data, cls)
 
 
 class ProtoBufHandler:
+    @staticmethod
     def to_proto(
-        self, model: Any, path_dir: str = ".", field_names: Optional[List[str]] = None
+        model: Any, path_dir: str = ".", field_names: Optional[List[str]] = None
     ):
         """
         Generate a ProtoBuf file for the model and optionally compile it, including specific fields if specified.
@@ -109,7 +117,7 @@ class ProtoBufHandler:
             os.makedirs(path_dir)
             logging.info(f"Created directory: {path_dir}")
 
-        proto_content = self.generate_proto_message(model, field_names)
+        proto_content = ProtoBufHandler.generate_proto_message(model, field_names)
         proto_file_path = os.path.join(
             path_dir, f"{model.__class__.__name__.lower()}.proto"
         )
@@ -119,13 +127,14 @@ class ProtoBufHandler:
                 file.write(proto_content)
             logging.info(f"Proto file generated at {proto_file_path}")
 
-            self.compile_proto(proto_file_path, path_dir)
+            ProtoBufHandler.compile_proto(proto_file_path, path_dir)
 
         except Exception as e:
             logging.error(f"Failed to write ProtoBuf file: {e}")
 
+    @staticmethod
     def generate_proto_message(
-        self, model: Any, field_names: Optional[List[str]] = None
+        model: Any, field_names: Optional[List[str]] = None
     ) -> str:
         """
         Generate ProtoBuf message definition for the class, including nested messages and enums.
@@ -134,7 +143,7 @@ class ProtoBufHandler:
         :param field_names: List of field names to include. If None, include all fields.
         :return: A string representation of the ProtoBuf message.
         """
-        header = self.generate_proto_file_header(model)
+        header = ProtoBufHandler.generate_proto_file_header(model)
         message = f"message {model.__class__.__name__} {{\n"
 
         for idx, field_info in enumerate(fields(model), start=1):
@@ -144,18 +153,20 @@ class ProtoBufHandler:
             name = field_info.metadata.get("proto_name", field_info.name)
             typ = field_info.type
 
-            if isinstance(typ, type) and hasattr(typ, "generate_proto_message"):
-                nested_message = typ.generate_proto_message().strip()
+            if isinstance(typ, type) and issubclass(typ, BaseModel):
+                nested_message = ProtoBufHandler.generate_proto_message(
+                    typ, field_names
+                ).strip()
                 indented_nested_message = nested_message.replace("\n", "\n    ")
                 message += f"    {indented_nested_message}\n"
                 proto_type = typ.__name__
             elif isinstance(typ, type) and issubclass(typ, Enum):
-                enum_def = self.generate_enum_definition(typ).strip()
+                enum_def = ProtoBufHandler.generate_enum_definition(typ).strip()
                 indented_enum_def = enum_def.replace("\n", "\n    ")
                 message += f"    {indented_enum_def}\n"
                 proto_type = typ.__name__
             else:
-                proto_type = self.get_proto_type(model, typ)
+                proto_type = ProtoBufHandler.get_proto_type(model, typ)
 
             options = ""
             if field_info.default is not MISSING:
@@ -170,7 +181,8 @@ class ProtoBufHandler:
         message += "}\n\n"
         return header + message
 
-    def get_proto_type(self, model: Any, python_type: Any) -> str:
+    @staticmethod
+    def get_proto_type(model: Any, python_type: Any) -> str:
         """
         Determine the ProtoBuf type from a Python type.
 
@@ -202,7 +214,8 @@ class ProtoBufHandler:
         else:
             return python_to_proto_type.get(python_type, python_type.__name__)
 
-    def generate_enum_definition(self, enum_type: Type[Enum]) -> str:
+    @staticmethod
+    def generate_enum_definition(enum_type: Type[Enum]) -> str:
         """
         Generate ProtoBuf enum definition for a Python Enum class.
 
@@ -215,21 +228,23 @@ class ProtoBufHandler:
         enum_def += "}\n"
         return enum_def
 
-    def generate_proto_file_header(self, model: Any) -> str:
+    @staticmethod
+    def generate_proto_file_header(model: Any) -> str:
         """
         Generate ProtoBuf file header including syntax, package, and custom imports.
 
         :param model: The model instance to generate a ProtoBuf header for.
         :return: ProtoBuf file header as a string.
         """
-        header = 'syntax = "proto3";\n'
+        header = f'syntax = "proto3";\n'
         header += f"package {model.package_name};\n\n"
         for imp in model.custom_imports:
             header += f'import "{imp}";\n'
         header += "\n"
         return header
 
-    def compile_proto(self, proto_file_path: str, output_dir: str):
+    @staticmethod
+    def compile_proto(proto_file_path: str, output_dir: str):
         """
         Compile the ProtoBuf file to generate Python classes.
 
