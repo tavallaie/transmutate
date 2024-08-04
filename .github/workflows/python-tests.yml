@@ -36,40 +36,6 @@ jobs:
     - name: Install dependencies
       run: poetry install
 
-    - name: Install Protocol Buffers on Ubuntu
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        PROTOC_VERSION=27.3  # Adjust this to the version you need
-        PROTOC_ZIP=protoc-${PROTOC_VERSION}-linux-x86_64.zip
-        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}
-        sudo unzip -o ${PROTOC_ZIP} -d /usr/local bin/protoc
-        sudo unzip -o ${PROTOC_ZIP} -d /usr/local include/*
-        rm -f ${PROTOC_ZIP}
-
-    - name: Install Protocol Buffers on macOS
-      if: matrix.os == 'macos-latest'
-      run: |
-        PROTOC_VERSION=27.3  # Adjust this to the version you need
-        PROTOC_ZIP=protoc-${PROTOC_VERSION}-osx-x86_64.zip
-        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}
-        sudo unzip -o ${PROTOC_ZIP} -d /usr/local bin/protoc
-        sudo unzip -o ${PROTOC_ZIP} -d /usr/local include/*
-        rm -f ${PROTOC_ZIP}
-
-    - name: Install Protocol Buffers on Windows
-      if: matrix.os == 'windows-latest'
-      run: |
-        $PROTOC_VERSION = "27.3"  # Adjust this to the version you need
-        $PROTOC_ZIP = "protoc-${PROTOC_VERSION}-win64.zip"
-        Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}" -OutFile $PROTOC_ZIP
-        Expand-Archive -Force -Path $PROTOC_ZIP -DestinationPath 'C:\protoc'
-        Remove-Item -Force $PROTOC_ZIP
-
-    - name: Add Protocol Buffers to PATH on Windows
-      if: matrix.os == 'windows-latest'
-      run: |
-        echo "C:\protoc\bin" >> $env:GITHUB_PATH
-
 
     - name: Run tests
       run: poetry run python -m unittest discover -s tests
