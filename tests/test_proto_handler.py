@@ -1,5 +1,4 @@
 import unittest
-import os
 from tests.test_classes import Person, Address
 from transmutate.proto_handler import ProtoHandler
 
@@ -26,13 +25,12 @@ class TestProtoHandler(unittest.TestCase):
         proto_handler = ProtoHandler(self.person)
         proto_content = proto_handler.generate_proto()
 
-        expected_person_proto = """
-            message Person {
-            string name = 1;
-            int32 age = 2;
-            string email = 3;
-            repeated string phone_numbers = 4;
-            }"""
+        expected_person_proto = """message Person {
+  string name = 1;
+  int32 age = 2;
+  string email = 3;
+  repeated string phone_numbers = 4;
+}"""
 
         self.assertEqual(proto_content.strip(), expected_person_proto.strip())
 
@@ -41,12 +39,11 @@ class TestProtoHandler(unittest.TestCase):
         proto_handler = ProtoHandler(self.address)
         proto_content = proto_handler.generate_proto()
 
-        expected_address_proto = """
-            message Address {
-            string street = 1;
-            string city = 2;
-            string zip_code = 3;
-            }"""
+        expected_address_proto = """message Address {
+  string street = 1;
+  string city = 2;
+  string zip_code = 3;
+}"""
 
         self.assertEqual(proto_content.strip(), expected_address_proto.strip())
 

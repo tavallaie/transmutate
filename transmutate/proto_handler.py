@@ -10,7 +10,12 @@ class ProtoHandler:
         # Clear any previous definitions to prevent duplicates
         self.proto_definitions.clear()
 
-        return self.process_dataclass(self.dataclass_obj.__class__)
+        # Start processing the root dataclass
+        self.process_dataclass(self.dataclass_obj.__class__)
+
+        # Join all message definitions into a single proto string (excluding syntax)
+        proto_content = "\n".join(self.proto_definitions)
+        return proto_content
 
     def process_dataclass(self, dataclass_type) -> str:
         # Build a message name
