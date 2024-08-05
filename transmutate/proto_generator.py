@@ -35,12 +35,12 @@ class ProtoGenerator:
 
         :return: Header content as a string.
         """
-        return f"""
-syntax = "proto3";
+        return f"""syntax = "proto3";
 
 package {self.service_name.lower()};
 
 // {self.service_name} service definition
+
 """
 
     def _generate_service(self) -> str:
@@ -86,7 +86,7 @@ package {self.service_name.lower()};
 
         :return: Message definitions as a string.
         """
-        messages_content = "// Request and response messages\n"
+        messages_content = "// Request and response messages\n\n"
 
         unique_messages = set()
 
@@ -97,7 +97,7 @@ package {self.service_name.lower()};
             ):
                 unique_messages.add(service.request_dataclass.__name__)
                 request_instance = service.request_dataclass()
-                messages_content += request_instance.to_proto()
+                messages_content += request_instance.to_proto() + "\n"
 
             if (
                 service.response_dataclass
@@ -105,7 +105,7 @@ package {self.service_name.lower()};
             ):
                 unique_messages.add(service.response_dataclass.__name__)
                 response_instance = service.response_dataclass()
-                messages_content += response_instance.to_proto()
+                messages_content += response_instance.to_proto() + "\n"
 
         return messages_content
 

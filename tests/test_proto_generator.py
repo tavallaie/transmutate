@@ -1,7 +1,8 @@
 import unittest
 import os
 from transmutate import Service, RpcType
-from transmutate import BaseModel, ProtoGenerator
+from transmutate import ProtoGenerator
+from transmutate import BaseModel
 from typing import List
 
 
@@ -39,6 +40,7 @@ syntax = "proto3";
 package testservice;
 
 // TestService service definition
+
 """
         header = self.generator._generate_header()
         self.assertEqual(header.strip(), expected_header.strip())
@@ -57,6 +59,7 @@ service TestService {
     def test_generate_messages(self):
         expected_messages_content = """
 // Request and response messages
+
 message TestMessage {
   string name = 1;
   int32 age = 2;
@@ -68,6 +71,7 @@ message AnotherMessage {
   string status = 1;
   string message = 2;
 }
+
 """
         messages_content = self.generator._generate_messages()
         self.assertEqual(messages_content.strip(), expected_messages_content.strip())
@@ -90,6 +94,7 @@ service TestService {
 }
 
 // Request and response messages
+
 message TestMessage {
   string name = 1;
   int32 age = 2;
@@ -101,6 +106,7 @@ message AnotherMessage {
   string status = 1;
   string message = 2;
 }
+
 """
             self.assertEqual(content.strip(), expected_content.strip())
         os.remove(self.generator.proto_file_path)
