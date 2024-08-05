@@ -3,7 +3,6 @@ from transmutate import BaseModel, Service, RpcType
 from typing import List
 
 
-# Define test dataclasses
 class TestMessage(BaseModel):
     name: str
     age: int
@@ -28,6 +27,7 @@ class TestService(unittest.TestCase):
         )
         self.assertEqual(service.name, "TestService")
         self.assertEqual(service.types, [RpcType.UNARY, RpcType.SERVER_STREAMING])
+        self.assertEqual(service.method_names, ["GetInfo", "StreamInfo"])
         self.assertEqual(service.request_dataclass, TestMessage)
         self.assertEqual(service.response_dataclass, AnotherMessage)
 
@@ -84,34 +84,10 @@ class TestService(unittest.TestCase):
             "}\n"
         )
 
-        service_definition = self.generate_service_definition(service)
+        service_definition = service.generate_service_definition()
         self.assertEqual(
             service_definition.strip(), expected_service_definition.strip()
         )
-
-    def generate_service_definition(self, service: Service) -> str:
-        """Helper function to generate the service definition."""
-        request_message_name = (
-            service.request_dataclass.__name__ if service.request_dataclass else "Empty"
-        )
-        response_message_name = (
-            service.response_dataclass.__name__
-            if service.response_dataclass
-            else "Empty"
-        )
-
-        service_definition = [f"service {service.name} {{\n"]
-
-        for rpc_type, method_name in zip(service.types, service.method_names):
-            rpc_method = rpc_type.value.format(
-                method_name=method_name,
-                request_message=request_message_name,
-                response_message=response_message_name,
-            )
-            service_definition.append(rpc_method)
-
-        service_definition.append("}\n")
-        return "".join(service_definition)
 
 
 if __name__ == "__main__":
