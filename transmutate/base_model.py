@@ -19,16 +19,26 @@ class BaseModel:
     def to_proto(self):
         from transmutate.proto_handler import (
             ProtoHandler,
-        )
+        )  # Lazy import to avoid circular import
 
         proto_generator = ProtoHandler(self)
         return proto_generator.generate_proto()
 
     def to_json(self):
-        return json.dumps(self.to_dict(), indent=4)
+        from transmutate.json_handler import (
+            JSONHandler,
+        )  # Lazy import to avoid circular import
+
+        json_handler = JSONHandler(self)
+        return json_handler.to_json()
 
     def to_jsonb(self):
-        return json.dumps(self.to_dict(), separators=(",", ":"))
+        from transmutate.jsonb_handler import (
+            JSONBHandler,
+        )  # Lazy import to avoid circular import
+
+        jsonb_handler = JSONBHandler(self)
+        return jsonb_handler.to_jsonb()
 
     @classmethod
     def from_proto(cls: Type["BaseModel"], proto_data: str) -> "BaseModel":
@@ -38,12 +48,20 @@ class BaseModel:
 
     @classmethod
     def from_json(cls: Type["BaseModel"], json_data: str) -> "BaseModel":
-        data_dict = json.loads(json_data)
+        from transmutate.json_handler import (
+            JSONHandler,
+        )  # Lazy import to avoid circular import
+
+        data_dict = JSONHandler.parse_json(json_data)
         return cls.from_dict(data_dict)
 
     @classmethod
     def from_jsonb(cls: Type["BaseModel"], jsonb_data: str) -> "BaseModel":
-        data_dict = json.loads(jsonb_data)
+        from transmutate.jsonb_handler import (
+            JSONBHandler,
+        )  # Lazy import to avoid circular import
+
+        data_dict = JSONBHandler.parse_jsonb(jsonb_data)
         return cls.from_dict(data_dict)
 
     @classmethod
