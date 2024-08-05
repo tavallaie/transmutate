@@ -1,4 +1,5 @@
- Transmutate
+[![DOI](https://zenodo.org/badge/837882085.svg)](https://zenodo.org/doi/10.5281/zenodo.13226541)
+# Transmutate
 
  Transmutate is a Python library designed to handle dataclass serialization and deserialization across various formats such as JSON, JSONB, and Protocol Buffers (Proto). The library supports both conversion to these formats and validation of dataclass fields.
 
