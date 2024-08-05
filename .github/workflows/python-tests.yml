@@ -1,12 +1,6 @@
 name: Python CI
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
   workflow_run:
     workflows: ["Lint Code with Black and Ruff"]
     types:
@@ -15,28 +9,10 @@ on:
 jobs:
   wait_for_linting:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Wait for Linting Workflow
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const branch = context.payload.workflow_run.head_branch;
-
-            // Check if the last Linting Workflow run was successful
-            const { data: runs } = await github.rest.actions.listWorkflowRuns({
-              owner,
-              repo,
-              workflow_id: 'Lint Code with Black and Ruff', // Use the lint workflow name here
-              status: 'completed',
-              per_page: 1,
-              branch: branch,
-            });
-
-            if (runs.workflow_runs.length === 0 || runs.workflow_runs[0].conclusion !== 'success') {
-              core.setFailed('Linting did not pass. Aborting other tasks.');
-            }
+      - name: Print linting status
+        run: echo "Linting successful, proceeding with build..."
 
   build:
     runs-on: ${{ matrix.os }}
@@ -45,7 +21,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11","3.12"]
       fail-fast: false
 
     steps:
@@ -60,6 +36,7 @@ jobs:
     - name: Install poetry
       uses: abatilo/actions-poetry@v2
       
+
     - name: Setup a local virtual environment (if no poetry.toml file)
       run: |
         poetry config virtualenvs.create true --local
