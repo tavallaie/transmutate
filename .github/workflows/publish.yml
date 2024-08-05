@@ -44,7 +44,7 @@ jobs:
         LATEST_TAG=$(git describe --tags --abbrev=0)
         TAG_VERSION=${LATEST_TAG#v}
         echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-        echo "tag_version=$TAG_VERSION" >> $GITHUB_ENV
+        echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
         echo "::set-output name=tag_version::$TAG_VERSION"
 
     - name: Log Version Information
@@ -75,7 +75,7 @@ jobs:
 
     - name: Publish to PyPI using Trusted Publisher
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Default GitHub Actions token for trusted publishing
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
       run: |
         echo "Publishing to PyPI because the version has changed from ${{ needs.check_version.outputs.tag_version }} to ${{ needs.check_version.outputs.current_version }}"
         poetry publish --build --no-interaction
