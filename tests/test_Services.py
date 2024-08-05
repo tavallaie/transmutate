@@ -9,10 +9,28 @@ class TestMessage(BaseModel):
     email: str
     phone_numbers: List[str]
 
+    def to_proto(self):
+        return (
+            "message TestMessage {\n"
+            "  string name = 1;\n"
+            "  int32 age = 2;\n"
+            "  string email = 3;\n"
+            "  repeated string phone_numbers = 4;\n"
+            "}\n"
+        )
+
 
 class AnotherMessage(BaseModel):
     status: str
     message: str
+
+    def to_proto(self):
+        return (
+            "message AnotherMessage {\n"
+            "  string status = 1;\n"
+            "  string message = 2;\n"
+            "}\n"
+        )
 
 
 class TestService(unittest.TestCase):

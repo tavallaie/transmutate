@@ -27,13 +27,17 @@ class Service:
     def get_request_message(self) -> str:
         """Generates the request message definition using to_proto."""
         if self.request_dataclass:
-            return self.request_dataclass.to_proto()
+            # Create an instance of the request dataclass
+            request_instance = self.request_dataclass()
+            return request_instance.to_proto()
         return ""
 
     def get_response_message(self) -> str:
         """Generates the response message definition using to_proto."""
         if self.response_dataclass:
-            return self.response_dataclass.to_proto()
+            # Create an instance of the response dataclass
+            response_instance = self.response_dataclass()
+            return response_instance.to_proto()
         return ""
 
     def generate_service_definition(self) -> str:
@@ -61,8 +65,6 @@ class Service:
 # Define an Empty message for cases without specific request/response dataclasses
 @dataclass
 class Empty:
-    pass
-
     @staticmethod
     def to_proto():
         return "message Empty {}\n"
