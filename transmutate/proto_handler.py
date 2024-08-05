@@ -1,5 +1,4 @@
 from typing import Optional
-import os
 
 
 class ProtoHandler:
@@ -11,28 +10,7 @@ class ProtoHandler:
         # Clear any previous definitions to prevent duplicates
         self.proto_definitions.clear()
 
-        # Start processing the root dataclass
-        self.process_dataclass(self.dataclass_obj.__class__)
-
-        # Join all message definitions into a single proto string
-        proto_content = "\n".join(['syntax = "proto3";', ""] + self.proto_definitions)
-        return proto_content
-
-    def write_proto_file(self, filename: str):
-        # Generate the proto content
-        proto_content = self.generate_proto()
-
-        # Determine the directory name
-        directory = os.path.dirname(filename)
-
-        # Ensure the directory exists if not an empty string
-        if directory:
-            os.makedirs(directory, exist_ok=True)
-
-        # Write the content to the specified file
-        with open(filename, "w") as file:
-            file.write(proto_content)
-        print(f"Proto file written to {filename}")
+        return self.process_dataclass(self.dataclass_obj.__class__)
 
     def process_dataclass(self, dataclass_type) -> str:
         # Build a message name
