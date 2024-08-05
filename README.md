@@ -37,7 +37,7 @@
  from typing import List, Optional
  from transmutate.base_model import BaseModel
 
- @dataclass
+ 
  class Person(BaseModel):
      name: str
      age: int
