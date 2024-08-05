@@ -97,7 +97,7 @@ package {self.service_name.lower()};
             ):
                 unique_messages.add(service.request_dataclass.__name__)
                 request_instance = service.request_dataclass()
-                messages_content += request_instance.to_proto() + "\n"
+                messages_content += request_instance.to_proto() + "\n\n"
 
             if (
                 service.response_dataclass
@@ -105,7 +105,7 @@ package {self.service_name.lower()};
             ):
                 unique_messages.add(service.response_dataclass.__name__)
                 response_instance = service.response_dataclass()
-                messages_content += response_instance.to_proto() + "\n"
+                messages_content += response_instance.to_proto() + "\n\n"
 
         return messages_content
 
