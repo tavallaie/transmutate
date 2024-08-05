@@ -23,7 +23,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x' # Use your project's Python version
+        python-version: '3.12'  
 
     - name: Install dependencies
       run: |
@@ -34,8 +34,9 @@ jobs:
       run: black --check --exclude '\.github/' .
 
     - name: Run Ruff
-      run: ruff --exclude .github .
+      run: ruff check . --exclude .github
 
-    # Set an output to indicate success
-    outputs:
-      lint_status: success
+    # Save the result of the linting job for downstream workflows
+    - name: Set lint success
+      if: ${{ success() }}
+      run: echo "lint_status=success" >> $GITHUB_ENV
