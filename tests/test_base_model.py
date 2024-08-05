@@ -1,5 +1,4 @@
 import unittest
-import os
 from tests.test_classes import Person, Address
 
 
@@ -21,59 +20,33 @@ class TestBaseModel(unittest.TestCase):
         )
 
     def test_to_proto_person(self):
-        # Test Proto generation and file writing for the Person dataclass
-        expected_proto_content = """syntax = "proto3";
-
-message Person {
+        # Test Proto generation for the Person dataclass
+        expected_proto_content = """message Person {
   string name = 1;
   int32 age = 2;
   string email = 3;
   repeated string phone_numbers = 4;
 }"""
 
-        # Use the to_proto method to generate Proto content and write to file
-        proto_content = self.person.to_proto(directory=".")
+        # Use the to_proto method to generate Proto content
+        proto_content = self.person.to_proto()
 
         # Verify the generated content
         self.assertEqual(proto_content.strip(), expected_proto_content.strip())
 
-        # Verify the file content
-        filename = "./person.proto"
-        self.assertTrue(os.path.exists(filename))
-        with open(filename, "r") as file:
-            file_content = file.read()
-
-        self.assertEqual(file_content.strip(), expected_proto_content.strip())
-
-        # Clean up by removing the created file
-        os.remove(filename)
-
     def test_to_proto_address(self):
-        # Test Proto generation and file writing for the Address dataclass
-        expected_proto_content = """syntax = "proto3";
-
-message Address {
+        # Test Proto generation for the Address dataclass
+        expected_proto_content = """message Address {
   string street = 1;
   string city = 2;
   string zip_code = 3;
 }"""
 
-        # Use the to_proto method to generate Proto content and write to file
-        proto_content = self.address.to_proto(directory=".")
+        # Use the to_proto method to generate Proto content
+        proto_content = self.address.to_proto()
 
         # Verify the generated content
         self.assertEqual(proto_content.strip(), expected_proto_content.strip())
-
-        # Verify the file content
-        filename = "./address.proto"
-        self.assertTrue(os.path.exists(filename))
-        with open(filename, "r") as file:
-            file_content = file.read()
-
-        self.assertEqual(file_content.strip(), expected_proto_content.strip())
-
-        # Clean up by removing the created file
-        os.remove(filename)
 
 
 if __name__ == "__main__":
