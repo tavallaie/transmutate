@@ -1,9 +1,13 @@
-from dataclasses import fields, MISSING
 from typing import Type
 import json
 
 
 class BaseModel:
+    def __init__(self, **kwargs):
+        # Automatically set attributes for any keyword arguments passed
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     def __post_init__(self):
         # Run validation methods
         self.run_validations()
@@ -65,19 +69,23 @@ class BaseModel:
         return cls.from_dict(data_dict)
 
     @classmethod
-    def from_dict(cls: Type["BaseModel"], data_dict: dict) -> "BaseModel":
+    def from_dict(cls, data_dict: dict) -> "BaseModel":
+        # Initialize the fields directly from the data dictionary
         field_values = {}
-        for field in fields(cls):
-            field_name = field.name
-            if field_name in data_dict:
-                field_values[field_name] = data_dict[field_name]
-            elif field.default is not MISSING:
-                field_values[field_name] = field.default
-            elif field.default_factory is not MISSING:
-                field_values[field_name] = field.default_factory()
+        for (
+            key,
+            value,
+        ) in cls.__annotations__.items():  # Assuming type hints are provided
+            if key in data_dict:
+                field_values[key] = data_dict[key]
             else:
-                raise ValueError(f"Missing required field '{field_name}'")
+                raise ValueError(f"Missing required field '{key}'")
         return cls(**field_values)
 
     def to_dict(self) -> dict:
-        return {field.name: getattr(self, field.name) for field in fields(self)}
+        """Convert the model instance to a dictionary."""
+        return self.__dict__.copy()
+
+    def __repr__(self):
+        fields = ", ".join(f"{k}={v}" for k, v in self.__dict__.items())
+        return f"{self.__class__.__name__}({fields})"
