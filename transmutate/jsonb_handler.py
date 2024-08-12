@@ -1,30 +1,28 @@
 import json
-from dataclasses import fields, is_dataclass
 from typing import Any
 
 
 class JSONBHandler:
-    def __init__(self, dataclass_obj):
-        self.dataclass_obj = dataclass_obj
+    def __init__(self, obj: Any):
+        self.obj = obj
 
     def to_jsonb(self) -> str:
-        data = self.serialize_dataclass(self.dataclass_obj)
-        return json.dumps(data, separators=(",", ":"))  # Minified JSON
+        data = self.serialize_obj(self.obj)
+        return json.dumps(data, separators=(",", ":"))
 
     @staticmethod
     def parse_jsonb(jsonb_data: str) -> dict:
         return json.loads(jsonb_data)
 
-    def serialize_dataclass(self, obj: Any) -> Any:
-        if is_dataclass(obj):
+    def serialize_obj(self, obj: Any) -> Any:
+        if hasattr(obj, "__dict__"):
             result = {}
-            for field in fields(obj):
-                value = getattr(obj, field.name)
-                result[field.name] = self.serialize_dataclass(value)
+            for key, value in obj.__dict__.items():
+                result[key] = self.serialize_obj(value)
             return result
         elif isinstance(obj, list):
-            return [self.serialize_dataclass(item) for item in obj]
+            return [self.serialize_obj(item) for item in obj]
         elif isinstance(obj, dict):
-            return {key: self.serialize_dataclass(value) for key, value in obj.items()}
+            return {key: self.serialize_obj(value) for key, value in obj.items()}
         else:
             return obj
